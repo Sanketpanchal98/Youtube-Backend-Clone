@@ -3,6 +3,8 @@ import ApiErrorHandler from "../Utils/ApiErrorHandler.js";
 import {User} from "../Models/user.model.js"
 import  uploadFile  from '../Utils/clodinary.js'
 import ApiResponseHandler from "../Utils/ApiResponseHanler.js";
+import jwt from "jsonwebtoken"
+import { options } from "../constants.js";
 
 const AccessAndRefreshTokenGenerator = async (userId) => {
 
@@ -113,8 +115,9 @@ const UserLogin = AsyncHandler ( async (req , res ) => {
 
     res.status(200)
     .cookie("AccessToken" , AccessToken , options)
+    .cookie("RefreshToken" , RefreshToken , options)
     .json(
-        new ApiResponseHandler(200 , {AccessToken , user } ,"user logged in successfully")
+        new ApiResponseHandler(200 , {AccessToken , user ,RefreshToken} ,"user logged in successfully")
     )
     ;
 
@@ -123,6 +126,8 @@ const UserLogin = AsyncHandler ( async (req , res ) => {
 const UserLogout = AsyncHandler ( async (req , res )=> {
 
     const userId = req.user._id;
+
+    if(!userId) throw new ApiErrorHandler(401 , "unathorized req");
 
     const user  = await User.findById(userId);
 
@@ -140,4 +145,30 @@ const UserLogout = AsyncHandler ( async (req , res )=> {
 
 } )
 
-export {UserRegister , UserLogin , UserLogout}
+const RefreshTokenHandler = AsyncHandler ( async (req , res )=> {
+
+    const incomingAccessToken = req.cookie || req.body
+
+    if(!incomingAccessToken){
+        throw new ApiErrorHandler(401 , "No access Token Providedd");
+    }
+
+    const decodedToken = await jwt.verify(incomingAccessToken , process.env.REFRESH_TOKEN_SECRET)
+
+    const user = await User.findById(decodedToken?._id);
+
+    if(!user) throw new ApiErrorHandler(401 , "Invalid Token");
+
+    const refreshToken = user.refreshToken
+
+    if(refreshToken !== incomingAccessToken) throw new ApiErrorHandler(401 , "Not have access");
+
+    const {newRefreshToken , AccessToken} = await AccessAndRefreshTokenGenerator(user._id);
+
+    
+
+    res.status(201).cookie("accessToken" , AccessToken , options).cookie("newRefreshToken" , newRefreshToken , options)
+
+});
+
+export {UserRegister , UserLogin , UserLogout , RefreshTokenHandler}

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { UserLogin, UserLogout, UserRegister } from "../controllers/User.controller.js";
+import { RefreshTokenHandler, UserLogin, UserLogout, UserRegister } from "../controllers/User.controller.js";
 import { upload } from '../Middlewares/Multer.middleware.js'
 import { cookieFetcher } from "../Middlewares/AuthUser.js";
 
@@ -24,5 +24,6 @@ router.route('/login').post(UserLogin)
 
 router.route("/logout").post(cookieFetcher , UserLogout);
 
+router.route("/RefreshToken").post(RefreshTokenHandler);
 
 export default router;
