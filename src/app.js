@@ -16,8 +16,15 @@ app.use(cookieParser());
 
 //adding roters
 import router from './Routes/user.routes.js';
+import videorouter from './Routes/video.routes.js'
+import { cookieFetcher } from './Middlewares/AuthUser.js';
 
 app.use('/api/v1/user' , router);
+
+//adding cookie fetcher for global routes
+app.use(cookieFetcher);
+
+app.use('/api/v1/video' , videorouter);
 
 
 export default app;

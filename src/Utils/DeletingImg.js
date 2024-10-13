@@ -10,9 +10,8 @@ const deleteCLoudinaryFile = async (imageURI) => {
     try {
         
         if(!imageURI) return null;
-        await cloudinary.v2.uploader
-        .destroy(imageURI)
-        .then(result=>console.log(result));
+        const result = await cloudinary.uploader.destroy(imageURI);
+        return result
 
     } catch (error) {
         console.log("error : " , error);

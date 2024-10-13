@@ -18,10 +18,14 @@ const VideoSchema = new Schema({
     likes : {
         type : Number
     },
+    owner : {
+        type : Schema.Types.ObjectId , 
+        ref : "User"
+    },
     createdBy : {
         type : Schema.Types.ObjectId,
         ref : "User"
     }
 });
 
-export default Video = mongoose.model('Video' , VideoSchema);
+export const Video = mongoose.model('Video' , VideoSchema);
