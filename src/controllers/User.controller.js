@@ -5,6 +5,7 @@ import  uploadFile  from '../Utils/clodinary.js'
 import ApiResponseHandler from "../Utils/ApiResponseHanler.js";
 import jwt from "jsonwebtoken"
 import { options } from "../constants.js";
+import deleteCLoudinaryFile from "../Utils/DeletingImg.js";
 
 const AccessAndRefreshTokenGenerator = async (userId) => {
 
@@ -67,7 +68,7 @@ const UserRegister = AsyncHandler ( async (req , res ) => {
         fullname,
         password,
         username,
-        Avatar : avatar_url,
+        Avatar : avatar_url.url,
         email,
         coverimage : coverimage_url
     })
@@ -140,14 +141,14 @@ const UserLogout = AsyncHandler ( async (req , res )=> {
 
     await user.save({validateBeforeSave : false})
 
-    res.clearCookie("AccessToken" , options)
+    return res.clearCookie("AccessToken" , options)
     .json(new ApiResponseHandler(200 , "User has been logged out" , {}))
 
 } )
 
 const RefreshTokenHandler = AsyncHandler ( async (req , res )=> {
 
-    const incomingAccessToken = req.cookie || req.body
+    const incomingAccessToken = req.cookie || req.body.cookie
 
     if(!incomingAccessToken){
         throw new ApiErrorHandler(401 , "No access Token Providedd");
@@ -156,19 +157,145 @@ const RefreshTokenHandler = AsyncHandler ( async (req , res )=> {
     const decodedToken = await jwt.verify(incomingAccessToken , process.env.REFRESH_TOKEN_SECRET)
 
     const user = await User.findById(decodedToken?._id);
-
+    console.log(user);
+    
     if(!user) throw new ApiErrorHandler(401 , "Invalid Token");
 
     const refreshToken = user.refreshToken
 
-    if(refreshToken !== incomingAccessToken) throw new ApiErrorHandler(401 , "Not have access");
+    // if(refreshToken !== incomingAccessToken) throw new ApiErrorHandler(401 , "Not have access");
 
-    const {newRefreshToken , AccessToken} = await AccessAndRefreshTokenGenerator(user._id);
+    const {RefreshToken , AccessToken} = await AccessAndRefreshTokenGenerator(user._id);
 
+    console.log(RefreshToken);
     
 
-    res.status(201).cookie("accessToken" , AccessToken , options).cookie("newRefreshToken" , newRefreshToken , options)
+    return res.status(201).cookie("accessToken" , AccessToken , options).cookie("newRefreshToken" , RefreshToken , options).json({refreshToken : RefreshToken,AccessToken : AccessToken})
 
 });
 
-export {UserRegister , UserLogin , UserLogout , RefreshTokenHandler}
+const updateUserPassword = AsyncHandler( async (req , res) => {
+    const { oldPassword , newPassword} = req.body;
+
+    if(!(oldPassword && newPassword)) throw new ApiErrorHandler(400 , "passwords are required")
+    const user = await User.findById(req.user?._id);
+
+    if(!user.passwordVerification(oldPassword)) throw new ApiErrorHandler(400 , "Old Password is Wrong");
+
+    user.password = newPassword;
+
+    await user.save({validateBeforeSave : false});
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponseHandler(200 , "Password updated successfully")
+    )
+})
+
+const updateUserDetails = AsyncHandler( async (req , res) => {
+    const { fullName , email} = req.body
+
+    if(!(fullName && email)) throw new ApiErrorHandler(400 , "Details Must reqired to update");
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set : {
+                fullname : fullName,
+                email 
+            }
+        },
+        {
+            new : true
+        }
+    )
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponseHandler(200 , "Details Updated successfully" ,user)
+    )
+})
+
+const updateUserCoverImage = AsyncHandler(async (req , res) => {
+    const LocalPathCoverImage = req.files?.coverImage[0]?.path
+
+    if(!LocalPathCoverImage) throw new ApiErrorHandler(400 , "Cover Imge is required");
+
+    const user = await User.findById(req.user?._id).select("-password -refreshToken");
+
+    const CoverImage = await uploadFile(LocalPathCoverImage)
+
+    const CoverimageUrl = user.coverimage
+
+    const result = await deleteCLoudinaryFile(CoverimageUrl);
+
+    if(!result) throw new ApiErrorHandler(500 , "File deleting unsuccessfull");
+
+    user.coverimage = CoverImage
+    await user.save({validateBeforeSave : false});
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponseHandler(200 , "Sucessfully uploaded" , user)
+    )
+
+})
+
+const updateUserAvatar = AsyncHandler( async (req , res) => {
+    const localPathAvatar = req.files?.Avatar[0]?.path
+
+    if (!localPathAvatar) {
+        throw new ApiErrorHandler(400 , "Avatar is required")
+    }
+
+    const Avatar = await uploadFile(localPathAvatar)
+
+    const user = await User.findByIdAndUpdate(req.user?._id,
+        {
+            $set : {
+                Avatar : Avatar
+            }
+        },
+        {
+            new : false
+        }
+    ).select("-password -refreshToken");
+
+    await user.save({validateBeforeSave : false})
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponseHandler(200 , "Updated Successfully Avatar" ,user)
+    )
+})
+
+const channelFetcher = AsyncHandler( async (req , res) => {
+
+    const {username} = req.params;
+
+    if(!username?.trim){
+        throw new ApiErrorHandler(404 , "No channel found");
+    }
+
+    const channelInfo = User.aggregate([
+        {
+            $match : username
+        },
+        
+    ])
+
+})
+
+export {UserRegister , 
+    UserLogin , 
+    UserLogout , 
+    RefreshTokenHandler,
+    updateUserDetails,
+    updateUserPassword,
+    updateUserCoverImage,
+    updateUserAvatar
+}

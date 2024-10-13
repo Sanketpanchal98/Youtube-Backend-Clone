@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { RefreshTokenHandler, UserLogin, UserLogout, UserRegister } from "../controllers/User.controller.js";
+import { RefreshTokenHandler, updateUserAvatar, updateUserCoverImage, updateUserDetails, updateUserPassword, UserLogin, UserLogout, UserRegister } from "../controllers/User.controller.js";
 import { upload } from '../Middlewares/Multer.middleware.js'
 import { cookieFetcher } from "../Middlewares/AuthUser.js";
 
@@ -25,5 +25,13 @@ router.route('/login').post(UserLogin)
 router.route("/logout").post(cookieFetcher , UserLogout);
 
 router.route("/RefreshToken").post(RefreshTokenHandler);
+
+router.route("/updatePassword").post(cookieFetcher , updateUserPassword);
+
+router.route("/updateDetails").post(cookieFetcher , updateUserDetails);
+
+router.route("/updateAvatar").post(upload.fields([{name : 'Avatar' , maxCount : 1}]),cookieFetcher , updateUserAvatar);
+
+router.route("/updateCover").post(upload.fields([{name : 'coverImage' , maxCount : 1}]),cookieFetcher , updateUserCoverImage);
 
 export default router;
