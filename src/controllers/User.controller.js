@@ -342,7 +342,52 @@ const channelFetcher = AsyncHandler( async (req , res) => {
      new ApiResponseHandler(200 , "Channel fetched successfully", channelInfo[0])
    )
 
-})
+});
+
+const getWatchHistory = AsyncHandler ( async (req, res) => {
+
+    const user = await User.aggregate([
+
+        {
+            $match : new mongoose.Types.ObjectId(req.user._id)
+        },
+        {
+            $lookup : {
+                from: 'videos',
+                localField : 'watchHistory',
+                foreignField : '_id',
+                as : 'watched',
+                pipeline : [{
+                    $lookup : {
+                        from : 'users',
+                        localField : 'owner',
+                        foreignField : '_id',
+                        pipeline : [
+                            {
+                                $project : {
+                                    username : 1,
+                                    fullName : 1,
+                                    Avatar : 1
+                                }
+                            }
+                        ]
+                    }
+                }]
+            }
+        }
+    ])
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponseHandler(
+            200,
+            "Successfully fetched",
+            user
+        )
+    )
+
+});
 
 export {UserRegister , 
     UserLogin , 
@@ -352,5 +397,6 @@ export {UserRegister ,
     updateUserPassword,
     updateUserCoverImage,
     updateUserAvatar,
-    channelFetcher
+    channelFetcher,
+    getWatchHistory
 }

@@ -30,9 +30,9 @@ router.route("/updatePassword").post(cookieFetcher , updateUserPassword);
 
 router.route("/updateDetails").post(cookieFetcher , updateUserDetails);
 
-router.route("/updateAvatar").post(upload.fields([{name : 'Avatar' , maxCount : 1}]),cookieFetcher , updateUserAvatar);
+router.route("/updateAvatar").post(cookieFetcher ,upload.fields([{name : 'Avatar' , maxCount : 1}]), updateUserAvatar);
 
-router.route("/updateCover").post(upload.fields([{name : 'coverImage' , maxCount : 1}]),cookieFetcher , updateUserCoverImage);
+router.route("/updateCover").post(cookieFetcher ,upload.fields([{name : 'coverImage' , maxCount : 1}]), updateUserCoverImage);
 
 router.route("/channel/:username").get(cookieFetcher , channelFetcher);
 
