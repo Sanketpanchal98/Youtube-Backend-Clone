@@ -281,12 +281,66 @@ const channelFetcher = AsyncHandler( async (req , res) => {
         throw new ApiErrorHandler(404 , "No channel found");
     }
 
-    const channelInfo = User.aggregate([
+    const channelInfo = await User.aggregate([
         {
-            $match : username
+            $match : {username}
         },
-        
-    ])
+        {
+            $lookup : {
+                from : "subcriptions",
+                localField : "_id",
+                foreignField : "subscribedTo",
+                as : "subscribedTo"
+            }
+        },
+        {
+            $lookup : {
+                from : "subcriptions",
+                localField : "_id",
+                foreignField : "subscribedBy",
+                as : "subscribedBy"
+            }
+        },
+        {
+            $addFields : {
+                subscribedTocount : {
+                    $size : "$subscribedTo"
+                },
+                subscribedBycount : {
+                    $size : "$subscribedBy"
+                },
+                isSubscribed : {
+                    $cond : {
+                        if : {$in : [req.user?._id , "$subscribedBy.subscribedBy"]} ,
+                        then : true,
+                        else : false
+                    }
+                }
+            }
+        },
+        {
+            $project : {
+                _id : 1,
+                username : 1,
+                fullname : 1,
+                email : 1,
+                Avatar : 1,
+                coverimage : 1,
+                subscribedTocount : 1,
+                subscribedBycount : 1,
+                isSubscribed : 1
+            }
+        }
+    ]);
+    // console.log(channelInfo[0]);
+    
+    if(!channelInfo.length) throw new ApiErrorHandler(404 , "No channel found of this name");
+
+    return res
+   .status(200)
+   .json(
+     new ApiResponseHandler(200 , "Channel fetched successfully", channelInfo[0])
+   )
 
 })
 
@@ -297,5 +351,6 @@ export {UserRegister ,
     updateUserDetails,
     updateUserPassword,
     updateUserCoverImage,
-    updateUserAvatar
+    updateUserAvatar,
+    channelFetcher
 }
