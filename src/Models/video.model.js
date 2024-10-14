@@ -15,9 +15,10 @@ const VideoSchema = new Schema({
         type : String,
         required : true,
     },
-    likes : {
-        type : Number
-    },
+    likes : [{
+        type : Schema.Types.ObjectId,
+        ref : 'User'
+    }],
     owner : {
         type : Schema.Types.ObjectId , 
         ref : "User"

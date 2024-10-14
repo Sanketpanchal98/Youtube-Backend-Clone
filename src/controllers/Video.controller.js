@@ -4,6 +4,7 @@ import ApiResponseHandler from '../Utils/ApiResponseHanler.js'
 import ApiErrorHandler from '../Utils/ApiErrorHandler.js'
 import uploadFile from '../Utils/clodinary.js'
 import deleteCLoudinaryFile from '../Utils/DeletingImg.js'
+import {User} from '../Models/user.model.js'
 
 
 
@@ -98,7 +99,82 @@ const deleteVideo = AsyncHandler (async (req , res) => {
 
 })
 
+const getAllvideo = AsyncHandler (async ( req , res ) => {
+
+    //fetching all videos at a time
+    //retunrinig all videos
+
+    const videos = await Video.find()
+    return res
+    .status(200)
+    .json(
+        new ApiResponseHandler(200 , "all videos fetched successfully" , videos)
+    )
+
+})
+
+const watchedVideo = AsyncHandler (async (req , res) => {
+
+    const {videoId} = req.params
+
+    const user = await User.findById(req.user);
+
+    if(!videoId){
+        throw new ApiErrorHandler(404 , "video not found");
+    }
+
+    user.watchHistory.push(videoId);
+    await user.save({validateBeforeSave : false});
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponseHandler(200 , "video added successfully" , user.watchHistory)
+    )
+
+})
+
+const likeUnlikeVideo = AsyncHandler ( async (req , res) => {
+
+    const {videoId} = req.params
+
+    if(!videoId){
+        throw new ApiErrorHandler(404 , "video not found")
+    }
+
+    const video = await Video.findById(videoId);
+
+    const isliked = video.likes.includes(req.user._id);
+    
+    if(isliked) {
+        const indexof = video.likes.indexOf(req.user._id);
+        console.log(indexof);
+        
+        video.likes.splice(indexof , 1);
+        await video.save()
+        return res
+        .status(200)
+        .json(
+            new ApiResponseHandler(200 , "unliked sucessfully" ,video.likes)
+        )
+    }
+
+    video.likes.push(req.user._id);
+
+    await video.save();
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponseHandler(200 , "video liked successfully" , video.likes)
+    )
+
+})
+
 export {
     uploadVideo,
-    deleteVideo
+    deleteVideo,
+    getAllvideo,
+    watchedVideo,
+    likeUnlikeVideo
 }
