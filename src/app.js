@@ -18,6 +18,11 @@ app.use(cookieParser());
 import router from './Routes/user.routes.js';
 import videorouter from './Routes/video.routes.js'
 import { cookieFetcher } from './Middlewares/AuthUser.js';
+import playListRouter from './Routes/playlist.routes.js'
+import commentRouter from './Routes/comment.routes.js';
+import tweetRouter from './Routes/tweet.routes.js'
+
+
 
 app.use('/api/v1/user' , router);
 
@@ -25,6 +30,12 @@ app.use('/api/v1/user' , router);
 app.use(cookieFetcher);
 
 app.use('/api/v1/video' , videorouter);
+
+app.use('/api/v1/playList' , playListRouter);
+
+app.use('/api/v1/comment' , commentRouter);
+
+app.use('/api/v1/tweet' , tweetRouter);
 
 
 export default app;

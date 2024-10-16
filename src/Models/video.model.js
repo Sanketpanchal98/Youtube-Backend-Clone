@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Aggregate } from "mongoose";
 
 const Schema = mongoose.Schema
 
@@ -15,18 +15,12 @@ const VideoSchema = new Schema({
         type : String,
         required : true,
     },
-    likes : [{
-        type : Schema.Types.ObjectId,
-        ref : 'User'
-    }],
     owner : {
         type : Schema.Types.ObjectId , 
         ref : "User"
-    },
-    createdBy : {
-        type : Schema.Types.ObjectId,
-        ref : "User"
     }
-});
+} , {timestamps : true});
+
+
 
 export const Video = mongoose.model('Video' , VideoSchema);

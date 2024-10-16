@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { channelFetcher, RefreshTokenHandler, updateUserAvatar, updateUserCoverImage, updateUserDetails, updateUserPassword, UserLogin, UserLogout, UserRegister } from "../controllers/User.controller.js";
+import { channelFetcher, getWatchHistory, RefreshTokenHandler, updateUserAvatar, updateUserCoverImage, updateUserDetails, updateUserPassword, UserLogin, UserLogout, UserRegister } from "../controllers/User.controller.js";
 import { upload } from '../Middlewares/Multer.middleware.js'
 import { cookieFetcher } from "../Middlewares/AuthUser.js";
 
@@ -35,5 +35,7 @@ router.route("/updateAvatar").post(cookieFetcher ,upload.fields([{name : 'Avatar
 router.route("/updateCover").post(cookieFetcher ,upload.fields([{name : 'coverImage' , maxCount : 1}]), updateUserCoverImage);
 
 router.route("/channel/:username").get(cookieFetcher , channelFetcher);
+
+router.route('/getwatchHistory').get(cookieFetcher,getWatchHistory);
 
 export default router;

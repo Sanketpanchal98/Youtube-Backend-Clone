@@ -6,6 +6,9 @@ import ApiResponseHandler from "../Utils/ApiResponseHanler.js";
 import jwt from "jsonwebtoken"
 import { options } from "../constants.js";
 import deleteCLoudinaryFile from "../Utils/DeletingImg.js";
+import Mongoose from 'mongoose'
+
+//all controllers are added
 
 const AccessAndRefreshTokenGenerator = async (userId) => {
 
@@ -45,6 +48,8 @@ const UserRegister = AsyncHandler ( async (req , res ) => {
     }
 
     const avatar = req.files?.Avatar[0]?.path
+    console.log(avatar);
+    
     let coverimage,coverimage_url;
     if (req.files.Cover>0) {
         coverimage = req.files?.Cover[0]?.path;
@@ -68,7 +73,7 @@ const UserRegister = AsyncHandler ( async (req , res ) => {
         fullname,
         password,
         username,
-        Avatar : avatar_url.url,
+        Avatar : avatar_url,
         email,
         coverimage : coverimage_url
     })
@@ -346,10 +351,13 @@ const channelFetcher = AsyncHandler( async (req , res) => {
 
 const getWatchHistory = AsyncHandler ( async (req, res) => {
 
+
     const user = await User.aggregate([
 
         {
-            $match : new mongoose.Types.ObjectId(req.user._id)
+            $match : {
+                _id : req.user?._id
+            }
         },
         {
             $lookup : {
@@ -362,6 +370,7 @@ const getWatchHistory = AsyncHandler ( async (req, res) => {
                         from : 'users',
                         localField : 'owner',
                         foreignField : '_id',
+                        as : 'watchHistory',
                         pipeline : [
                             {
                                 $project : {

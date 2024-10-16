@@ -6,7 +6,7 @@ import uploadFile from '../Utils/clodinary.js'
 import deleteCLoudinaryFile from '../Utils/DeletingImg.js'
 import {User} from '../Models/user.model.js'
 
-
+//all constrollers are added
 
 const uploadVideo = AsyncHandler ( async (req , res) => {
 
@@ -134,39 +134,48 @@ const watchedVideo = AsyncHandler (async (req , res) => {
 
 })
 
-const likeUnlikeVideo = AsyncHandler ( async (req , res) => {
+const getVideoOFUser = AsyncHandler ( async (req , res) => {
 
-    const {videoId} = req.params
+    //searching in pipeline using the owner
+    //requisting owner from params
+    //gruoping videos and sending res
 
-    if(!videoId){
-        throw new ApiErrorHandler(404 , "video not found")
-    }
-
-    const video = await Video.findById(videoId);
-
-    const isliked = video.likes.includes(req.user._id);
+    const { id }= req.params
     
-    if(isliked) {
-        const indexof = video.likes.indexOf(req.user._id);
-        console.log(indexof);
-        
-        video.likes.splice(indexof , 1);
-        await video.save()
-        return res
-        .status(200)
-        .json(
-            new ApiResponseHandler(200 , "unliked sucessfully" ,video.likes)
-        )
+    const SearchUser = await User.find(
+        {
+            username : id
+        }
+    )
+    
+    if(!SearchUser){
+        throw new ApiErrorHandler(404 , "usr not found");
     }
 
-    video.likes.push(req.user._id);
-
-    await video.save();
+    const videosofUser = await Video.aggregate([
+        {
+            $match : { owner : SearchUser[0]._id }
+        },
+        {
+            $lookup : {
+                from : 'users',
+                localField : 'owner',
+                foreignField : '_id',
+                as : 'videos',
+                pipeline : [{
+                    $project : {
+                        username : 1,
+                        Avatar : 1
+                    }
+                }]
+            }
+        }
+    ])
 
     return res
     .status(200)
     .json(
-        new ApiResponseHandler(200 , "video liked successfully" , video.likes)
+        new ApiResponseHandler(200 , "videos successfully fetched" , videosofUser)
     )
 
 })
@@ -176,5 +185,5 @@ export {
     deleteVideo,
     getAllvideo,
     watchedVideo,
-    likeUnlikeVideo
+    getVideoOFUser
 }
