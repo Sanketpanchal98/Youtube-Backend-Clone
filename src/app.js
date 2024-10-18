@@ -21,7 +21,7 @@ import { cookieFetcher } from './Middlewares/AuthUser.js';
 import playListRouter from './Routes/playlist.routes.js'
 import commentRouter from './Routes/comment.routes.js';
 import tweetRouter from './Routes/tweet.routes.js'
-
+import likerouter from './Routes/likes.routes.js'
 
 
 app.use('/api/v1/user' , router);
@@ -37,5 +37,6 @@ app.use('/api/v1/comment' , commentRouter);
 
 app.use('/api/v1/tweet' , tweetRouter);
 
+app.use('/api/v1/like' , likerouter);
 
 export default app;

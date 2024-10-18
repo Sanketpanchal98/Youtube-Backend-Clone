@@ -2,6 +2,7 @@ import AsyncHandler from '../Utils/AsyncHandler.js'
 import ApiErrorHandler from '../Utils/ApiErrorHandler.js'
 import ApiResponseHandler from '../Utils/ApiResponseHanler.js'
 import { Like } from '../Models/likes.model.js';
+import Mongoose from 'mongoose' 
 
 //1. Like a video controller
 //2. Like a comment controller
@@ -9,7 +10,6 @@ import { Like } from '../Models/likes.model.js';
 //4. fetch video likes with count
 //5. fetch tweet likes with count
 //6. fetch comment likes with count
-
 
 
 const likeVideo = AsyncHandler ( async ( req , res) => {
@@ -95,17 +95,142 @@ const fetchVideoLikes = AsyncHandler ( async ( req , res) => {
         [
             {
                 $match : {
-                    video : videoId
+                    video : new Mongoose.Types.ObjectId(videoId)
+                }
+            },
+            {
+                $lookup : {
+                    from : 'users',
+                    localField : 'likedby',
+                    foreignField : '_id',
+                    as : 'likedby',
+                    pipeline : [
+                        {
+                            $project : {
+                                username : 1,
+                                fullName : 1,
+                                Avatar : 1
+                            }
+                        }
+                    ]
                 }
             },
             {
                 $addFields : {
                     countoflikes : {
-
+                        $size : '$likedby'
                     }
                 }
             }
         ]
     )
 
+    return res
+    .status(200)
+    .json(
+        new ApiResponseHandler(200 , `total likes are ${like.length}` , like)
+    )
+
 });
+
+const fetchTweetLikes = AsyncHandler ( async ( req , res) => {
+
+    const { tweetId } = req.params;
+
+    const like = await Like.aggregate(
+        [
+            {
+                $match : {
+                    tweet : new Mongoose.Types.ObjectId(tweetId)
+                }
+            },
+            {
+                $lookup : {
+                    from : 'users',
+                    localField : 'likedby',
+                    foreignField : '_id',
+                    as : 'likedby',
+                    pipeline : [
+                        {
+                            $project : {
+                                username : 1,
+                                fullName : 1,
+                                Avatar : 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields : {
+                    countoflikes : {
+                        $size : '$likedby'
+                    }
+                }
+            }
+        ]
+    )
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponseHandler(200 , "Likes fetched successfully" , like)
+    )
+
+});
+
+const fetchCommentLikes = AsyncHandler ( async ( req , res) => {
+
+    const { commentId } = req.params;
+
+    const like = await Like.aggregate(
+        [
+            {
+                $match : {
+                    tweet : new Mongoose.Types.ObjectId(commentId)
+                }
+            },
+            {
+                $lookup : {
+                    from : 'users',
+                    localField : 'likedby',
+                    foreignField : '_id',
+                    as : 'likedby',
+                    pipeline : [
+                        {
+                            $project : {
+                                username : 1,
+                                fullName : 1,
+                                Avatar : 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields : {
+                    countoflikes : {
+                        $size : '$likedby'
+                    }
+                }
+            }
+        ]
+    )
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponseHandler(200 , "Likes fetched successfully" , like)
+    )
+
+});
+
+
+export {
+    likeVideo,
+    likeTweet,
+    likeComment,
+    fetchVideoLikes,
+    fetchTweetLikes,
+    fetchCommentLikes
+}
